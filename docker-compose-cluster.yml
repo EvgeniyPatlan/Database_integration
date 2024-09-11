@@ -1,0 +1,137 @@
+
+version: '3'
+
+services:
+  postgres-primary:
+    image: percona/postgresql:latest
+    container_name: postgres-primary
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_primary_data:/var/lib/postgresql/data
+      - ./init_cluster/postgres_init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres_cluster
+
+  postgres-replica-1:
+    image: percona/postgresql:latest
+    container_name: postgres-replica-1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_PRIMARY_HOST: postgres-primary
+    volumes:
+      - postgres_replica1_data:/var/lib/postgresql/data
+    networks:
+      - postgres_cluster
+
+  postgres-replica-2:
+    image: percona/postgresql:latest
+    container_name: postgres-replica-2
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_PRIMARY_HOST: postgres-primary
+    volumes:
+      - postgres_replica2_data:/var/lib/postgresql/data
+    networks:
+      - postgres_cluster
+
+  mysql-node1:
+    image: percona/percona-xtradb-cluster:latest
+    container_name: mysql-node1
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      CLUSTER_NAME: "mysql_cluster"
+      XTRABACKUP_PASSWORD: backup_password
+    volumes:
+      - mysql_node1_data:/var/lib/mysql
+      - ./init_cluster/mysql_init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - mysql_cluster
+
+  mysql-node2:
+    image: percona/percona-xtradb-cluster:latest
+    container_name: mysql-node2
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      CLUSTER_NAME: "mysql_cluster"
+      XTRABACKUP_PASSWORD: backup_password
+      CLUSTER_JOIN: mysql-node1
+    volumes:
+      - mysql_node2_data:/var/lib/mysql
+    networks:
+      - mysql_cluster
+
+  mysql-node3:
+    image: percona/percona-xtradb-cluster:latest
+    container_name: mysql-node3
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      CLUSTER_NAME: "mysql_cluster"
+      XTRABACKUP_PASSWORD: backup_password
+      CLUSTER_JOIN: mysql-node1
+    volumes:
+      - mysql_node3_data:/var/lib/mysql
+    networks:
+      - mysql_cluster
+
+  mongo-primary:
+    image: percona/percona-server-mongodb:latest
+    container_name: mongo-primary
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_user
+      MONGO_INITDB_ROOT_PASSWORD: mongo_password
+    volumes:
+      - mongo_primary_data:/data/db
+      - ./init_cluster/mongodb_init.js:/docker-entrypoint-initdb.d/init.js
+    ports:
+      - "27017:27017"
+    networks:
+      - mongo_cluster
+
+  mongo-secondary-1:
+    image: percona/percona-server-mongodb:latest
+    container_name: mongo-secondary-1
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_user
+      MONGO_INITDB_ROOT_PASSWORD: mongo_password
+    volumes:
+      - mongo_secondary1_data:/data/db
+    networks:
+      - mongo_cluster
+
+  mongo-secondary-2:
+    image: percona/percona-server-mongodb:latest
+    container_name: mongo-secondary-2
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_user
+      MONGO_INITDB_ROOT_PASSWORD: mongo_password
+    volumes:
+      - mongo_secondary2_data:/data/db
+    networks:
+      - mongo_cluster
+
+networks:
+  postgres_cluster:
+    driver: bridge
+  mysql_cluster:
+    driver: bridge
+  mongo_cluster:
+    driver: bridge
+
+volumes:
+  postgres_primary_data:
+  postgres_replica1_data:
+  postgres_replica2_data:
+  mysql_node1_data:
+  mysql_node2_data:
+  mysql_node3_data:
+  mongo_primary_data:
+  mongo_secondary1_data:
+  mongo_secondary2_data:

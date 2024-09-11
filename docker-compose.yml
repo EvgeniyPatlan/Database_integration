@@ -1,0 +1,53 @@
+
+version: '3.8'
+
+services:
+  postgres:
+    image: percona/postgresql:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - integration-network
+
+  mysql:
+    image: percona/percona-server:latest
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: mysql_user
+      MYSQL_PASSWORD: mysql_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - integration-network
+
+  mongodb:
+    image: percona/percona-server-mongodb:latest
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_user
+      MONGO_INITDB_ROOT_PASSWORD: mongo_password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - integration-network
+
+networks:
+  integration-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mysql_data:
+  mongo_data:
