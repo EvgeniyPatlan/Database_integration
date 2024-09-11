@@ -1,0 +1,57 @@
+name: Database Integration CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: percona/postgresql:latest
+        ports:
+          - 5432:5432
+        options: > 
+          --health-cmd "pg_isready -U postgres" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+      mysql:
+        image: percona/percona-server:latest
+        ports:
+          - 3306:3306
+        options: > 
+          --health-cmd "mysqladmin ping" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: mydb
+      mongo:
+        image: percona/percona-server-mongodb:latest
+        ports:
+          - 27017:27017
+        options: > 
+          --health-cmd "mongo --eval 'db.runCommand({ ping: 1 })'" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run Sysbench Tests
+        run: |
+          ./sysbench_mysql_insert.sh mysql
+          ./sysbench_pg_insert.sh postgres
+          ./sysbench_mongo_insert.sh mongo
